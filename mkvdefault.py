@@ -1,5 +1,6 @@
-"""A wrapper over mkvpropedit to quickly change the default track in an mkv file.
-"""
+#!/usr/bin/env python3
+
+"""A wrapper over mkvpropedit to quickly change the default track in an mkv file."""
 
 from functools import reduce
 
