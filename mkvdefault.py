@@ -52,11 +52,11 @@ def mkvmerge(file):
 
 def get_parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-s", "--same-lang", action="store_true")
-    parser.add_argument("-v", "--verbose", action="store_true")
-    parser.add_argument("-t", "--track-type", choices=["audio", "subtitles", "video"])
-    parser.add_argument("name_or_number", metavar="name-or-number")
-    parser.add_argument("files", nargs="*", metavar="file.mkv")
+    parser.add_argument("-p", "--print", action="store_true", help="Print the tracks before and after modification")
+    parser.add_argument("-s", "--same-lang", action="store_true", help="Reset the previous default only if the language is the same")
+    parser.add_argument("-t", "--default-type", choices=["audio", "subtitles", "video"], metavar="type", help="Type of the default track. Type can be audio, subtitles, or video")
+    parser.add_argument("name_or_number", metavar="name|number", help="Name of the new default or its number")
+    parser.add_argument("files", nargs="*", metavar="file", help="An MKV file in which you want to change the default track")
     return parser
 
 def main():
@@ -83,10 +83,10 @@ def main():
         mkv_info = mkvmerge(file)
 
         if mkv_info["container"]["type"] != "Matroska":
-            print("The file '{}' is not an mkv file.".format(file))
+            print("The file '{}' is not an MKV file.".format(file))
             sys.exit(1)
 
-        tracks = [track for track in tracks_of_type(mkv_info["tracks"], args.track_type)
+        tracks = [track for track in tracks_of_type(mkv_info["tracks"], args.default_type)
                 if matchfunc(track)]
         if len(tracks):
             if len(tracks) > 1:
@@ -130,7 +130,7 @@ def main():
 
         # Print result
 
-        if not args.verbose:
+        if not args.print:
             continue
 
         prev = tracks_of_type(mkv_info["tracks"], default_type)
