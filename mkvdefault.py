@@ -69,13 +69,13 @@ def main():
     files = files if files else glob.iglob(os.path.join(os.getcwd(), "**", "*.mkv"), recursive=True)
 
     if name_or_number.isdecimal():
-        def matchfunc(track):
-            return track[0] == name_or_number
+        def matchfunc(nth_of_type, track):
+            return (nth_of_type if args.default_type else track[0]) == name_or_number
         name_or_number = int(name_or_number)
         if name_or_number <= 0:
             print_and_exit("Track numbers starts at 1.")
     else:
-        def matchfunc(track):
+        def matchfunc(_, track):
             track = track[1]
             return (name_or_number.casefold() in track["properties"]["track_name"].casefold()
                     if track["properties"].get("track_name") else False)
@@ -87,8 +87,8 @@ def main():
             print("The file '{}' is not an MKV file.".format(file))
             sys.exit(1)
 
-        tracks = [track for track in tracks_of_type(mkv_info["tracks"], args.default_type)
-                if matchfunc(track)]
+        tracks = [track for i, track in enumerate(tracks_of_type(mkv_info["tracks"], args.default_type))
+                if matchfunc(i+1, track)]
         if len(tracks):
             if len(tracks) > 1:
                 # here tracks always have a name
