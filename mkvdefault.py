@@ -36,7 +36,7 @@ def print_tracks(tracks):
         track_name = track["properties"].get("track_name", "")
         print("{:<2}) {:<9} ({}) {:<{}} {}".format(track_num,
                                                    track["type"],
-                                                   track["properties"]["language"],
+                                                   track["properties"].get("language", "???"),
                                                    track_name,
                                                    name_maxlen,
                                                    default_str))
@@ -56,8 +56,8 @@ def get_parser():
     parser.add_argument("-p", "--print", action="store_true", help="Print the tracks before and after modification")
     parser.add_argument("-s", "--same-lang", action="store_true", help="Reset the previous default only if the language is the same")
     parser.add_argument("-t", "--default-type", choices=["audio", "subtitles", "video"], metavar="type", help="Type of the default track. Type can be audio, subtitles, or video")
-    parser.add_argument("name_or_number", metavar="name|number", help="Name of the new default or its number")
-    parser.add_argument("files", nargs="*", metavar="file", help="An MKV file in which you want to change the default track")
+    parser.add_argument("name_or_number", metavar="name|number", help="Name of the new default track or its number")
+    parser.add_argument("files", nargs="*", metavar="file", help="An MKV file in which you want to change the default track. If not provided, the CWD is used to discover files with an .mkv extension")
     return parser
 
 def main():
@@ -77,15 +77,13 @@ def main():
     else:
         def matchfunc(_, track):
             track = track[1]
-            return (name_or_number.casefold() in track["properties"]["track_name"].casefold()
-                    if track["properties"].get("track_name") else False)
+            return name_or_number.casefold() in track["properties"].get("track_name", "").casefold()
 
     for file in files:
         mkv_info = mkvmerge(file)
 
         if mkv_info["container"]["type"] != "Matroska":
-            print("The file '{}' is not an MKV file.".format(file))
-            sys.exit(1)
+            print_and_exit("The file '{}' is not an MKV file.".format(file))
 
         tracks = [track for i, track in enumerate(tracks_of_type(mkv_info["tracks"], args.default_type))
                 if matchfunc(i+1, track)]
@@ -93,7 +91,7 @@ def main():
             if len(tracks) > 1:
                 # here tracks always have a name
                 track_numbers = [i for i, _ in tracks]
-                print("Multiple tracks match. Select the track using its number:")
+                print("Multiple tracks match in file '{}'. Select the track using its number:".format(file))
                 while True:
                     print_tracks(tracks)
                     num = input()
@@ -108,11 +106,11 @@ def main():
             else:
                 default_track_num, track = tracks[0]
             default_type = track["type"]
-            default_lang = track["properties"]["language"]
+            default_lang = track["properties"].get("language")
             tracks_to_modify = [(i, i == default_track_num)
                             for i, track in tracks_of_type(mkv_info["tracks"], default_type)
                             if ((i != default_track_num and track["properties"]["default_track"]
-                                    and (not args.same_lang or track["properties"]["language"] == default_lang))
+                                    and (not args.same_lang or track["properties"].get("language") == default_lang))
                                 or (i == default_track_num and not track["properties"]["default_track"]))]
         else:
             print("No tracks match in file '{}'.".format(file))
