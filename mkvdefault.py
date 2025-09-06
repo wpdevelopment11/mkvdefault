@@ -12,15 +12,12 @@ import os.path
 import subprocess
 import sys
 
-def exit_if_err(status, output, message, filename):
-    if status == 0:
+def exit_if_err(proc, err_msg, proc_output):
+    if proc.returncode == 0:
         return
-    error = "mkvmerge exited with a non-zero code: {}\nWhile trying to {} file '{}'.".format(status, message, filename)
-    print(error)
-    for error in output["errors"]:
-        print(error, end="")
-    for warning in output["warnings"]:
-        print(warning, end="")
+    print("{} exited with a non-zero code: {}".format(proc.args[0], proc.returncode))
+    print(err_msg)
+    print(proc_output.removesuffix("\n"))
     sys.exit(1)
 
 def print_and_exit(message):
@@ -46,10 +43,21 @@ def tracks_of_type(tracks, track_type=None):
             if track_type is None or track["type"] == track_type]
 
 def mkvmerge(file):
-    proc = subprocess.run(["mkvmerge", "-J", file], capture_output=True, encoding="utf-8")
+    proc = proc_run(["mkvmerge", "-J", file])
     mkv_info = json.loads(proc.stdout)
-    exit_if_err(proc.returncode, mkv_info, "print tracks after modification in", file)
+    err_output = "".join(mkv_info["errors"]) + "".join(mkv_info["warnings"])
+    exit_if_err(proc, "While trying to identify a file '{}'.".format(file), err_output)
     return mkv_info
+
+def mkvpropedit(file, tracks_to_modify):
+    cmd = ["mkvpropedit", file]
+    for track_num, default in tracks_to_modify:
+        cmd += ["--edit", "track:{}".format(track_num), "--set", "flag-default={:d}".format(default)]
+    proc = proc_run(cmd)
+    exit_if_err(proc, "While trying to modify a file '{}'.".format(file), proc.stdout)
+
+def proc_run(args):
+    return subprocess.run(args, capture_output=True, encoding="utf-8")
 
 def get_parser():
     parser = argparse.ArgumentParser()
@@ -116,16 +124,8 @@ def main():
             print("No tracks match in file '{}'.".format(file))
             continue
 
-        cmd = ["mkvpropedit", file]
-
         if tracks_to_modify:
-            for track_num, default in tracks_to_modify:
-                cmd += ["--edit", "track:{}".format(track_num), "--set", "flag-default={:d}".format(default)]
-
-            proc = subprocess.run(cmd, capture_output=True, encoding="utf-8")
-
-            if proc.returncode:
-                print_and_exit("mkvpropedit exited with a non-zero code: {}\nWhile trying to modify the file '{}'.\n{}".format(proc.returncode, file, proc.stdout))
+            mkvpropedit(file, tracks_to_modify)
 
         # Print result
 
