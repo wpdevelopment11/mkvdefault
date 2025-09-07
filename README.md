@@ -1,9 +1,8 @@
 # Change the default track in an MKV file
 
-Suppose you have a set of MKV files you want to watch,
-for example, you're watching a series with multiple translations.
-It's annoying to constantly switch the track to a desired one, if the
-default one, chosen by your media player is not the track you want.
+Suppose you want to watch an mkv file that contains multiple tracks
+in the same language. You want to select one of them.
+It's annoying to constantly switch the track to a desired one in your media player, if the default one is not the track you want.
 
 Your media player chooses the track to play based on the _default flag_.
 If it's set to 1, the player selects it.
