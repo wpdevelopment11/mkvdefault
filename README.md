@@ -33,7 +33,7 @@ To set the second audio track as a default, run:
 ./mkvdefault.py -p -t audio 2 movie.mkv
 ```
 
-To set the _default flag_ to the track which contains "shows" in its name, run:
+To set the _default flag_ to the track which contains _shows_ in its name, run:
 
 ```bash
 ./mkvdefault.py -p shows movie.mkv
